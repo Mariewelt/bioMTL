@@ -28,7 +28,7 @@ validset = [y, features];
 validset(:, ps.remove) = [];
 dataset = dataset';
 arr = sort(arr);
-arr = arr(1:end-1);
+arr = arr(1:end-50);
 dataset = dataset(:, [1:classes_num, arr+1+classes_num]);
 filename2 = 'model.csv';
 model_desc = read_data(filename2);
@@ -52,5 +52,22 @@ mode = 'random';
 
 %% Launch process
 dataset = dataset(randperm(size(dataset,1)),:);
+[xlearn, xcontrol, ylearn, ycontrol] = devide_data(dataset(:, classes_num+1:end), dataset(:,1:classes_num), size_learn);
+[xlearn, ts] = mapstd(xlearn');
+xlearn = xlearn';
+xcontrol = mapstd('apply', xcontrol', ts);
+xcontrol = xcontrol';
+
 %[er_c, er_l, auc, model] = build_model(dataset, classifier_descr, size_learn, classes_num, ind_train, ind_test, mode);
-scores = cross_validation(dataset, classifier_descr, classes_num, cross_val_fold);
+%scores = cross_validation(dataset, classifier_descr, classes_num, cross_val_fold);
+
+nin = size(xlearn, 2);
+nout = classes_num;
+nhidden = classifier_descr.numhid(1);
+ncycles = classifier_descr.numepochs(1);
+
+net = neural_net_init(nin, nout, nhidden, ncycles);
+
+for i=1:100
+    [unit, i_opt, j_opt, m] = greedy_prunning_criteria(net, xlearn, ylearn, xcontrol, ycontrol) 
+end
